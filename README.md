@@ -28,7 +28,7 @@ You should see Training Object Cache listed under `Plugins > Drop-ins` in the Da
 
 Browse your site, then look for the `wp_training_object_cache` table in your preferred database viewer.
 
-The table contains these columns:
+The table contains the following columns:
 
 * `cache_group`: The group given for the cached data. Groups allow keys to be reused across groups.
 * `cache_key`: The cache key. In multisite installations, the key is given a site-specific prefix to allow keys to be reused across sites.
@@ -47,7 +47,7 @@ Each object caching drop-in plugin is free to implement caching however it likes
 
 This plugin is NOT RECOMMENDED for use on a live site!
 
-Apart from increasing load on the database, it has little protection against race conditions, and because storing scalar values in the database can be lossy, unexpected behavior can occur relative to other persistent caching backends. See, e.g., https://core.trac.wordpress.org/ticket/22192.
+Apart from increasing load on the database, it has little protection against race conditions, and because [storing scalar values in the database can be lossy](https://core.trac.wordpress.org/ticket/22192), unexpected behavior can occur relative to other persistent caching backends.
 
 ## WP-CLI commands
 
@@ -55,4 +55,3 @@ The following WP-CLI commands are available for interacting with the training ca
 
 * `wp training-object-cache reset`: Delete all cached data, and recreate the database table.
 * `wp training-object-cache destroy`: Delete all cached data, and remove the database table.
-
