@@ -1,6 +1,6 @@
 # The Training Object Cache for WordPress
 
-The Training Object Cache is a learning tool for studying and debugging the data stored using the WordPress cache API.
+The Training Object Cache is a teaching tool for studying and debugging the data stored using the WordPress cache API.
 
 ## Introduction
 
