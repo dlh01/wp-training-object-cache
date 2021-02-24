@@ -515,8 +515,6 @@ class WP_Object_Cache {
 
 			$expires = $expire ? time() + (int) $expire : 0;
 
-			$this->delete( $key, $group );
-
 			$this->dbh->insert(
 				$this->dbh->training_object_cache,
 				array(
