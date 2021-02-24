@@ -648,11 +648,7 @@ class WP_Object_Cache {
 		}
 
 		$results = $this->dbh->get_results(
-			$this->dbh->prepare(
-				"SELECT data FROM {$this->dbh->training_object_cache} WHERE cache_group = %s AND cache_key = %s LIMIT 1",
-				$group,
-				$key
-			)
+			$this->select_data( $key, $group )
 		);
 
 		if ( 0 === count( $results ) ) {
