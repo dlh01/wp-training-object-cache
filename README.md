@@ -12,9 +12,9 @@ If a persistent object cache plugin is in use, such as [Memcached](https://wordp
 
 The goal of the Training Object Cache is to make it easier to learn about the data stored in the cache by storing it in a dedicated table in your site's existing database.
 
-For developers who are new to the cache API, having the data stored in the existing database means it can be easily browsed alongside the default WordPress tables using a database viewer like phpMyAdmin or Sequel Pro.
+For developers who are new to the cache API, having the data stored in the existing database means it can be easily reviewed alongside the default WordPress tables using a database viewer like phpMyAdmin or Sequel Pro.
 
-Even experienced developers might find data being duplicated across keys, entries taking up more space than expected, or data being cached that isn't supposed to be anymore.
+Even experienced developers browsing the cached data might find data being duplicated across keys, entries taking up more space than expected, or data being cached that isn't supposed to be anymore.
 
 ## Installation
 
