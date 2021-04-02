@@ -583,7 +583,7 @@ class WP_Object_Cache {
 		}
 
 		if ( $this->multisite && ! function_exists( 'get_network' ) ) {
-			add_action( 'init', array( $this, 'upsert' ) );
+			add_action( 'ms_loaded', array( $this, 'upsert' ) );
 
 			return;
 		}
