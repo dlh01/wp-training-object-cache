@@ -51,7 +51,7 @@ Apart from increasing load on the database, it has little protection against rac
 
 ## WP-CLI commands
 
-The following WP-CLI commands are available for interacting with the training cache:
+All built-in `wp cache` WP-CLI commands should work normally with the training cache. The following custom commands are also available:
 
 * `wp training-object-cache reset`: Delete all cached data, and recreate the database table.
 * `wp training-object-cache destroy`: Delete all cached data, and remove the database table.
