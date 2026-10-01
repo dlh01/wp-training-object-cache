@@ -206,6 +206,25 @@ class WP_Object_Cache {
 	}
 
 	/**
+	 * Adds multiple values to the cache in one call.
+	 *
+	 * @param array  $data   Array of keys and values to be added.
+	 * @param string $group  Optional. Where the cache contents are grouped. Default empty.
+	 * @param int    $expire Optional. When to expire the cache contents. Default 0 (no expiration).
+	 * @return bool[] Array of return values, grouped by key. Each value is either
+	 *                true on success, or false if cache key and group already exist.
+	 */
+	public function add_multiple( array $data, $group = '', $expire = 0 ) {
+		$values = array();
+
+		foreach ( $data as $key => $value ) {
+			$values[ $key ] = $this->add( $key, $value, $group, $expire );
+		}
+
+		return $values;
+	}
+
+	/**
 	 * Adds non-persistent groups.
 	 *
 	 * @param string|string[] $groups List of groups that are global.
@@ -288,6 +307,24 @@ class WP_Object_Cache {
 	}
 
 	/**
+	 * Deletes multiple values from the cache in one call.
+	 *
+	 * @param array  $keys  Array of keys to be deleted.
+	 * @param string $group Optional. Where the cache contents are grouped. Default empty.
+	 * @return bool[] Array of return values, grouped by key. Each value is either
+	 *                true on success, or false if the contents were not deleted.
+	 */
+	public function delete_multiple( array $keys, $group = '' ) {
+		$values = array();
+
+		foreach ( $keys as $key ) {
+			$values[ $key ] = $this->delete( $key, $group );
+		}
+
+		return $values;
+	}
+
+	/**
 	 * Delete all expired cache values.
 	 */
 	public function expire() {
@@ -315,6 +352,47 @@ class WP_Object_Cache {
 		$this->dbh->query( "TRUNCATE {$this->dbh->training_object_cache}" );
 
 		wp_cache_init();
+
+		return true;
+	}
+
+	/**
+	 * Removes all cache items in a group.
+	 *
+	 * In multisite, this removes the items in the group for all sites.
+	 *
+	 * @param string $group Name of group to remove from cache.
+	 * @return true Always returns true.
+	 */
+	public function flush_group( $group ) {
+		if ( ! $this->ready ) {
+			return true;
+		}
+
+		if ( empty( $group ) ) {
+			$group = 'default';
+		}
+
+		$this->dbh->delete(
+			$this->dbh->training_object_cache,
+			array( 'cache_group' => $group )
+		);
+
+		unset( $this->cache[ $group ], $this->not_cached[ $group ] );
+
+		return true;
+	}
+
+	/**
+	 * Removes all cache items from the in-memory runtime cache.
+	 *
+	 * Data in the database table is not affected.
+	 *
+	 * @return true Always returns true.
+	 */
+	public function flush_runtime() {
+		$this->cache      = array();
+		$this->not_cached = array();
 
 		return true;
 	}
@@ -537,6 +615,24 @@ class WP_Object_Cache {
 	}
 
 	/**
+	 * Sets multiple values to the cache in one call.
+	 *
+	 * @param array  $data   Array of keys and values to be set.
+	 * @param string $group  Optional. Where the cache contents are grouped. Default empty.
+	 * @param int    $expire Optional. When to expire the cache contents. Default 0 (no expiration).
+	 * @return bool[] Array of return values, grouped by key. Each value is always true.
+	 */
+	public function set_multiple( array $data, $group = '', $expire = 0 ) {
+		$values = array();
+
+		foreach ( $data as $key => $value ) {
+			$values[ $key ] = $this->set( $key, $value, $group, $expire );
+		}
+
+		return $values;
+	}
+
+	/**
 	 * Echoes the cache hits and cache misses. Also prints every cached group and the size of its data.
 	 */
 	public function stats() {
@@ -720,6 +816,12 @@ function wp_cache_add( $key, $data, $group = '', $expire = 0 ) {
 	return $wp_object_cache->add( $key, $data, $group, (int) $expire );
 }
 
+function wp_cache_add_multiple( array $data, $group = '', $expire = 0 ) {
+	global $wp_object_cache;
+
+	return $wp_object_cache->add_multiple( $data, $group, (int) $expire );
+}
+
 function wp_cache_close() {
 	return true;
 }
@@ -736,10 +838,28 @@ function wp_cache_delete( $key, $group = '' ) {
 	return $wp_object_cache->delete( $key, $group );
 }
 
+function wp_cache_delete_multiple( array $keys, $group = '' ) {
+	global $wp_object_cache;
+
+	return $wp_object_cache->delete_multiple( $keys, $group );
+}
+
 function wp_cache_flush() {
 	global $wp_object_cache;
 
 	return $wp_object_cache->flush();
+}
+
+function wp_cache_flush_group( $group ) {
+	global $wp_object_cache;
+
+	return $wp_object_cache->flush_group( $group );
+}
+
+function wp_cache_flush_runtime() {
+	global $wp_object_cache;
+
+	return $wp_object_cache->flush_runtime();
 }
 
 function wp_cache_get( $key, $group = '', $force = false, &$found = null ) {
@@ -770,6 +890,27 @@ function wp_cache_set( $key, $data, $group = '', $expire = 0 ) {
 	global $wp_object_cache;
 
 	return $wp_object_cache->set( $key, $data, $group, (int) $expire );
+}
+
+function wp_cache_set_multiple( array $data, $group = '', $expire = 0 ) {
+	global $wp_object_cache;
+
+	return $wp_object_cache->set_multiple( $data, $group, (int) $expire );
+}
+
+function wp_cache_supports( $feature ) {
+	switch ( $feature ) {
+		case 'add_multiple':
+		case 'set_multiple':
+		case 'get_multiple':
+		case 'delete_multiple':
+		case 'flush_runtime':
+		case 'flush_group':
+			return true;
+
+		default:
+			return false;
+	}
 }
 
 function wp_cache_switch_to_blog( $blog_id ) {
