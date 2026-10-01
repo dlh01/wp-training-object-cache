@@ -65,7 +65,7 @@ class WP_Object_Cache {
 	/**
 	 * List of nonpersistent cache groups.
 	 *
-	 * @var string[]
+	 * @var bool[]
 	 */
 	private $nonpersistent_groups = array();
 
@@ -227,13 +227,13 @@ class WP_Object_Cache {
 	/**
 	 * Adds non-persistent groups.
 	 *
-	 * @param string|string[] $groups List of groups that are global.
+	 * @param string|string[] $groups List of groups that are non-persistent.
 	 */
 	public function add_non_persistent_groups( $groups ) {
 		$groups = (array) $groups;
 
+		$groups                     = array_fill_keys( $groups, true );
 		$this->nonpersistent_groups = array_merge( $this->nonpersistent_groups, $groups );
-		$this->nonpersistent_groups = array_unique( $this->nonpersistent_groups );
 	}
 
 	/**
@@ -293,13 +293,15 @@ class WP_Object_Cache {
 			return false;
 		}
 
-		$this->dbh->delete(
-			$this->dbh->training_object_cache,
-			array(
-				'cache_key'   => $id,
-				'cache_group' => $group,
-			)
-		);
+		if ( $this->is_persistent( $group ) ) {
+			$this->dbh->delete(
+				$this->dbh->training_object_cache,
+				array(
+					'cache_key'   => $id,
+					'cache_group' => $group,
+				)
+			);
+		}
 
 		unset( $this->cache[ $group ][ $id ] );
 
@@ -583,12 +585,22 @@ class WP_Object_Cache {
 
 		$id = $this->prefixed( $key, $group );
 
+		if ( ! $this->is_persistent( $group ) ) {
+			if ( is_object( $data ) ) {
+				$data = clone $data;
+			}
+
+			$this->cache[ $group ][ $id ] = $data;
+
+			return true;
+		}
+
 		// Reduce chance of duplicate insert from another process by forcing re-check.
 		unset( $this->not_cached[ $group ][ $id ] );
 
 		if ( $this->exists( $id, $group ) ) {
 			$this->replace( $key, $data, $group, $expire );
-		} elseif ( empty( $this->nonpersistent_groups[ $group ] ) ) {
+		} else {
 			$data = maybe_serialize( $data );
 
 			$expires = $expire ? time() + (int) $expire : 0;
@@ -737,6 +749,10 @@ class WP_Object_Cache {
 			return true;
 		}
 
+		if ( ! $this->is_persistent( $group ) ) {
+			return false;
+		}
+
 		if ( isset( $this->not_cached[ $group ][ $key ] ) && true === $this->not_cached[ $group ][ $key ] ) {
 			return false;
 		}
@@ -767,16 +783,28 @@ class WP_Object_Cache {
 	 * @param int        $value Value.
 	 */
 	private function update_numeric( $key, $group, $value ) {
-		$this->dbh->update(
-			$this->dbh->training_object_cache,
-			array( 'data' => $value ),
-			array(
-				'cache_key'   => $key,
-				'cache_group' => $group,
-			)
-		);
+		if ( $this->is_persistent( $group ) ) {
+			$this->dbh->update(
+				$this->dbh->training_object_cache,
+				array( 'data' => $value ),
+				array(
+					'cache_key'   => $key,
+					'cache_group' => $group,
+				)
+			);
+		}
 
 		$this->cache[ $group ][ $key ] = $value;
+	}
+
+	/**
+	 * Whether data in a group is stored in the database.
+	 *
+	 * @param string $group Cache group.
+	 * @return bool
+	 */
+	private function is_persistent( $group ) {
+		return ! isset( $this->nonpersistent_groups[ $group ] );
 	}
 
 	/**
